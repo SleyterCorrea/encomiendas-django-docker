@@ -1,6 +1,6 @@
 # Sistema de Gestión de Encomiendas
 
-Proyecto base en **Django + Docker + PostgreSQL**, preparado para **Linux Mint** siguiendo la estructura de las diapositivas.
+Proyecto base en **Django + Docker + PostgreSQL**, 
 
 ## 1. Instalar Docker en Linux Mint
 
