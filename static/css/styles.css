@@ -1,0 +1,234 @@
+/* ================================================================
+   Sistema de Encomiendas — Estilos personalizados
+   ================================================================ */
+
+/* ── Variables ─────────────────────────────────────────────────── */
+:root {
+  --font-base: 'Inter', sans-serif;
+  --color-primary:   #0d6efd;
+  --color-warning:   #f7c948;
+  --color-danger:    #dc3545;
+  --color-success:   #28a745;
+  --color-info:      #17a2b8;
+  --color-dark:      #1a1a2e;
+  --radius-card:     12px;
+  --shadow-card:     0 2px 12px rgba(0,0,0,.08);
+}
+
+/* ── Base ──────────────────────────────────────────────────────── */
+* { font-family: var(--font-base); }
+
+body {
+  background-color: #f5f6fa;
+  color: #2d3436;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main.container { flex: 1; }
+
+/* ── Navbar ────────────────────────────────────────────────────── */
+.navbar-brand { letter-spacing: -0.02em; font-size: 1.2rem; }
+
+.avatar-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: linear-gradient(135deg, var(--color-warning), #e6a817);
+  color: #1a1a2e;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.avatar-circle-lg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, var(--color-warning), #e6a817);
+  color: #1a1a2e;
+  border-radius: 50%;
+  font-weight: 800;
+  font-size: 2rem;
+}
+
+/* ── Tarjetas (stat cards) ─────────────────────────────────────── */
+.stat-card {
+  border-radius: var(--radius-card) !important;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.12) !important;
+}
+
+.stat-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  flex-shrink: 0;
+}
+
+.stat-number {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: #6c757d;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.stat-link {
+  font-size: 0.78rem;
+  color: var(--color-primary);
+  text-decoration: none;
+}
+
+.stat-link:hover { text-decoration: underline; }
+
+/* Soft backgrounds para íconos */
+.bg-primary-soft { background-color: rgba(13, 110, 253, 0.1); }
+.bg-info-soft    { background-color: rgba(23, 162, 184, 0.1); }
+.bg-danger-soft  { background-color: rgba(220, 53, 69, 0.1); }
+.bg-success-soft { background-color: rgba(40, 167, 69, 0.1); }
+.bg-warning-soft { background-color: rgba(255, 193, 7, 0.1); }
+
+/* ── Cards generales ───────────────────────────────────────────── */
+.card { border-radius: var(--radius-card) !important; }
+
+.card-header {
+  border-radius: var(--radius-card) var(--radius-card) 0 0 !important;
+  font-size: 0.9rem;
+}
+
+/* ── Badges de estado ──────────────────────────────────────────── */
+.badge-estado {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-estado.badge-sm {
+  padding: 2px 8px;
+  font-size: 0.72rem;
+}
+
+/* Pendiente */
+.badge-estado--PE {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+/* En tránsito */
+.badge-estado--TR {
+  background-color: #cff4fc;
+  color: #055160;
+}
+
+/* En destino */
+.badge-estado--DE {
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+/* Entregado */
+.badge-estado--EN {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+/* Devuelto */
+.badge-estado--DV {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+/* ── Tabla ─────────────────────────────────────────────────────── */
+.table th { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.table-danger-subtle { background-color: rgba(220, 53, 69, 0.04); }
+
+/* ── Detail labels ─────────────────────────────────────────────── */
+.detail-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #adb5bd;
+  margin-bottom: 2px;
+}
+
+/* ── Timeline (historial) ──────────────────────────────────────── */
+.timeline { position: relative; padding-left: 1.5rem; }
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e9ecef;
+}
+
+.timeline-item {
+  position: relative;
+  padding-bottom: 1.2rem;
+}
+
+.timeline-item:last-child { padding-bottom: 0; }
+
+.timeline-dot {
+  position: absolute;
+  left: -1.1rem;
+  top: 0.3rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-warning);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px var(--color-warning);
+}
+
+.timeline-content { padding-left: 0.5rem; }
+
+/* ── Footer ────────────────────────────────────────────────────── */
+.footer { margin-top: auto; font-size: 0.82rem; }
+
+/* ── Formularios ───────────────────────────────────────────────── */
+.form-control:focus, .form-select:focus {
+  border-color: var(--color-warning);
+  box-shadow: 0 0 0 3px rgba(247, 201, 72, 0.2);
+}
+
+/* ── Breadcrumb ────────────────────────────────────────────────── */
+.breadcrumb { font-size: 0.85rem; }
+
+/* ── Animations ────────────────────────────────────────────────── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.card { animation: fadeInUp 0.3s ease-out; }
+
+/* ── Responsive ────────────────────────────────────────────────── */
+@media (max-width: 576px) {
+  .stat-number { font-size: 1.6rem; }
+  .stat-icon   { width: 48px; height: 48px; }
+}

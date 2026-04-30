@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Encomiendas</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background: #f5f7fb; color: #1f2937; }
+        header { background: #1d4ed8; color: white; padding: 24px; }
+        main { max-width: 1100px; margin: 30px auto; padding: 0 20px; }
+        .card { background: white; border-radius: 14px; box-shadow: 0 10px 30px rgba(0,0,0,.08); padding: 24px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { padding: 12px; border-bottom: 1px solid #e5e7eb; text-align: left; }
+        th { background: #eff6ff; }
+        .pill { padding: 4px 10px; border-radius: 999px; font-size: 12px; background: #dbeafe; }
+        .muted { color: #6b7280; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Sistema de Gestión de Encomiendas</h1>
+        <p>Proyecto base en Django + Docker + PostgreSQL</p>
+    </header>
+    <main>
+        <div class="card">
+            <h2>Bienvenido</h2>
+            <p class="muted">Si ves esta pantalla, tu proyecto está funcionando correctamente.</p>
+            <p><strong>Admin:</strong> <a href="/admin/">/admin/</a></p>
+            <h3>Últimas encomiendas</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Peso</th>
+                        <th>Estado</th>
+                        <th>Fecha de envío</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in encomiendas %}
+                    <tr>
+                        <td>{{ item.codigo }}</td>
+                        <td>{{ item.descripcion }}</td>
+                        <td>{{ item.peso_kg }} kg</td>
+                        <td><span class="pill">{{ item.get_estado_display }}</span></td>
+                        <td>{{ item.fecha_envio }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5">Todavía no hay encomiendas registradas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</body>
+</html>

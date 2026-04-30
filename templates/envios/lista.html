@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Lista de Encomiendas — Sistema de Encomiendas{% endblock %}
+
+{% block content %}
+<!-- Encabezado -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="h3 mb-0 fw-bold">
+      <i class="bi bi-list-ul me-2 text-warning"></i>Encomiendas
+    </h1>
+    <p class="text-muted mb-0 small">
+      {{ page_obj.paginator.count }} encomienda{{ page_obj.paginator.count|pluralize }} en total
+    </p>
+  </div>
+  <a href="{% url 'crear' %}" class="btn btn-warning fw-semibold">
+    <i class="bi bi-plus-circle me-1"></i>Nueva Encomienda
+  </a>
+</div>
+
+<!-- Filtro por estado -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body py-3">
+    <form method="GET" class="d-flex gap-2 align-items-center flex-wrap">
+      <label for="filtro-estado" class="form-label mb-0 fw-semibold text-muted small text-uppercase">
+        <i class="bi bi-funnel me-1"></i>Filtrar por estado:
+      </label>
+      <select name="estado" id="filtro-estado" class="form-select form-select-sm w-auto"
+              onchange="this.form.submit()">
+        <option value="">— Todos los estados —</option>
+        {% for valor, etiqueta in estados %}
+        <option value="{{ valor }}" {% if estado_filtro == valor %}selected{% endif %}>
+          {{ etiqueta }}
+        </option>
+        {% endfor %}
+      </select>
+      {% if estado_filtro %}
+      <a href="{% url 'lista' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-x-circle me-1"></i>Limpiar
+      </a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<!-- Tabla -->
+<div class="card border-0 shadow-sm">
+  <div class="card-body p-0">
+    {% if page_obj %}
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="table-dark">
+          <tr>
+            <th>#</th>
+            <th>Código</th>
+            <th>Remitente</th>
+            <th>Destinatario</th>
+            <th>Ruta</th>
+            <th>Peso</th>
+            <th>Costo</th>
+            <th>Estado</th>
+            <th>Fecha reg.</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for enc in page_obj %}
+          <tr {% if enc.tiene_retraso %}class="table-danger-subtle"{% endif %}>
+            <td class="text-muted small">
+              {{ page_obj.start_index|add:forloop.counter0 }}
+            </td>
+            <td>
+              <code class="fw-bold">{{ enc.codigo }}</code>
+              {% if enc.tiene_retraso %}
+              <span class="badge bg-danger ms-1" title="Con retraso">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+              </span>
+              {% endif %}
+            </td>
+            <td>
+              <div>{{ enc.remitente.nombre_completo }}</div>
+              <small class="text-muted">{{ enc.remitente.nro_doc }}</small>
+            </td>
+            <td>
+              <div>{{ enc.destinatario.nombre_completo }}</div>
+              <small class="text-muted">{{ enc.destinatario.nro_doc }}</small>
+            </td>
+            <td class="text-muted small">
+              <i class="bi bi-geo-alt me-1"></i>{{ enc.ruta.origen }}<br>
+              <i class="bi bi-arrow-down small me-1"></i>{{ enc.ruta.destino }}
+            </td>
+            <td class="text-end">{{ enc.peso_kg }} kg</td>
+            <td class="text-end fw-semibold">S/. {{ enc.costo_envio }}</td>
+            <td>
+              <span class="badge-estado badge-estado--{{ enc.estado }}">
+                {{ enc.get_estado_display }}
+              </span>
+            </td>
+            <td class="text-muted small">{{ enc.fecha_registro|date:"d/m/Y" }}</td>
+            <td>
+              <a href="{% url 'detalle' enc.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                <i class="bi bi-eye"></i>
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Paginación -->
+    {% if page_obj.has_other_pages %}
+    <div class="d-flex justify-content-between align-items-center px-4 py-3 border-top">
+      <small class="text-muted">
+        Mostrando {{ page_obj.start_index }}–{{ page_obj.end_index }}
+        de {{ page_obj.paginator.count }} encomiendas
+      </small>
+      <nav aria-label="Paginación">
+        <ul class="pagination pagination-sm mb-0">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if estado_filtro %}estado={{ estado_filtro }}&{% endif %}page={{ page_obj.previous_page_number }}">
+              <i class="bi bi-chevron-left"></i>
+            </a>
+          </li>
+          {% endif %}
+
+          {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+              <a class="page-link" href="?{% if estado_filtro %}estado={{ estado_filtro }}&{% endif %}page={{ num }}">{{ num }}</a>
+            </li>
+            {% endif %}
+          {% endfor %}
+
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?{% if estado_filtro %}estado={{ estado_filtro }}&{% endif %}page={{ page_obj.next_page_number }}">
+              <i class="bi bi-chevron-right"></i>
+            </a>
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+      No se encontraron encomiendas
+      {% if estado_filtro %}con el estado seleccionado{% endif %}.
+      <div class="mt-2">
+        {% if estado_filtro %}
+        <a href="{% url 'lista' %}" class="btn btn-outline-secondary btn-sm me-2">Ver todas</a>
+        {% endif %}
+        <a href="{% url 'crear' %}" class="btn btn-warning btn-sm">
+          <i class="bi bi-plus-circle me-1"></i>Nueva encomienda
+        </a>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
