@@ -13,7 +13,7 @@
       {{ page_obj.paginator.count }} encomienda{{ page_obj.paginator.count|pluralize }} en total
     </p>
   </div>
-  <a href="{% url 'crear' %}" class="btn btn-warning fw-semibold">
+  <a href="{% url 'encomienda_crear' %}" class="btn btn-warning fw-semibold">
     <i class="bi bi-plus-circle me-1"></i>Nueva Encomienda
   </a>
 </div>
@@ -35,7 +35,7 @@
         {% endfor %}
       </select>
       {% if estado_filtro %}
-      <a href="{% url 'lista' %}" class="btn btn-outline-secondary btn-sm">
+      <a href="{% url 'encomienda_lista' %}" class="btn btn-outline-secondary btn-sm">
         <i class="bi bi-x-circle me-1"></i>Limpiar
       </a>
       {% endif %}
@@ -98,7 +98,7 @@
             </td>
             <td class="text-muted small">{{ enc.fecha_registro|date:"d/m/Y" }}</td>
             <td>
-              <a href="{% url 'detalle' enc.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+              <a href="{% url 'encomienda_detalle' enc.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
                 <i class="bi bi-eye"></i>
               </a>
             </td>
@@ -154,9 +154,9 @@
       {% if estado_filtro %}con el estado seleccionado{% endif %}.
       <div class="mt-2">
         {% if estado_filtro %}
-        <a href="{% url 'lista' %}" class="btn btn-outline-secondary btn-sm me-2">Ver todas</a>
+        <a href="{% url 'encomienda_lista' %}" class="btn btn-outline-secondary btn-sm me-2">Ver todas</a>
         {% endif %}
-        <a href="{% url 'crear' %}" class="btn btn-warning btn-sm">
+        <a href="{% url 'encomienda_crear' %}" class="btn btn-warning btn-sm">
           <i class="bi bi-plus-circle me-1"></i>Nueva encomienda
         </a>
       </div>

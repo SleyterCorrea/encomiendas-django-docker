@@ -1,9 +1,9 @@
 # envios/views.py
-from django.shortcuts import render, get_object_or_404, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from config.choices import EstadoEnvio
 from .models import Encomienda, Empleado, HistorialEstado
@@ -16,33 +16,29 @@ from .forms import EncomiendaForm, CambiarEstadoForm
 
 @login_required
 def dashboard(request):
-    """
-    Vista principal: muestra contadores de encomiendas y las últimas 10.
-    """
-    total_activas   = Encomienda.objects.activas().count()
-    total_transito  = Encomienda.objects.en_transito().count()
-    total_retraso   = Encomienda.objects.con_retraso().count()
-    ultimas         = Encomienda.objects.con_relaciones().order_by('-fecha_registro')[:10]
-
+    """Vista principal del sistema con estadísticas"""
+    hoy = timezone.now().date()
     context = {
-        'total_activas':  total_activas,
-        'total_transito': total_transito,
-        'total_retraso':  total_retraso,
-        'ultimas':        ultimas,
-        'EstadoEnvio':    EstadoEnvio,
+        'total_activas':   Encomienda.objects.activas().count(),
+        'en_transito':     Encomienda.objects.en_transito().count(),
+        'con_retraso':     Encomienda.objects.con_retraso().count(),
+        'entregadas_hoy':  Encomienda.objects.filter(
+                               estado=EstadoEnvio.ENTREGADO,
+                               fecha_entrega_real=hoy
+                           ).count(),
+        'ultimas':         Encomienda.objects.con_relaciones()[:5],
+        'EstadoEnvio':     EstadoEnvio,
     }
     return render(request, 'envios/dashboard.html', context)
 
 
 # ─────────────────────────────────────────────────────────
-#  Lista de encomiendas (con paginación y filtro)
+#  Lista de encomiendas (paginación + filtro)
 # ─────────────────────────────────────────────────────────
 
 @login_required
-def lista_encomiendas(request):
-    """
-    Lista paginada (15 por página) con filtro opcional por estado.
-    """
+def encomienda_lista(request):
+    """Lista paginada (15/pág) con filtro opcional por estado."""
     estado_filtro = request.GET.get('estado', '')
     qs = Encomienda.objects.con_relaciones().order_by('-fecha_registro')
 
@@ -67,16 +63,14 @@ def lista_encomiendas(request):
 # ─────────────────────────────────────────────────────────
 
 @login_required
-def detalle_encomienda(request, pk):
-    """
-    Muestra toda la info de la encomienda y su historial de estados.
-    """
+def encomienda_detalle(request, pk):
+    """Muestra toda la info de la encomienda y su historial de estados."""
     encomienda = get_object_or_404(
         Encomienda.objects.con_relaciones().prefetch_related('historial__empleado'),
         pk=pk,
     )
-    historial = encomienda.historial.order_by('-fecha_cambio')
-    form_estado = CambiarEstadoForm()
+    historial    = encomienda.historial.order_by('-fecha_cambio')
+    form_estado  = CambiarEstadoForm()
 
     context = {
         'encomienda':  encomienda,
@@ -92,49 +86,42 @@ def detalle_encomienda(request, pk):
 # ─────────────────────────────────────────────────────────
 
 @login_required
-def crear_encomienda(request):
+def encomienda_crear(request):
     """
-    Formulario de nueva encomienda. El empleado_registro se asigna
-    automáticamente al Empleado cuyo email coincide con el usuario logueado,
-    o al primero disponible si no coincide.
+    GET  → muestra el formulario vacío
+    POST → valida, guarda y redirige al detalle
+    El empleado_registro se asigna por email del usuario logueado.
     """
     if request.method == 'POST':
         form = EncomiendaForm(request.POST)
         if form.is_valid():
             try:
-                encomienda = form.save(commit=False)
-                # Asignar empleado_registro al usuario logueado
-                try:
-                    empleado = Empleado.objects.get(email=request.user.email)
-                except Empleado.DoesNotExist:
-                    empleado = Empleado.objects.first()
-
-                if not empleado:
-                    messages.error(
-                        request,
-                        'No existe ningún empleado registrado. '
-                        'Crea uno en el Admin antes de registrar encomiendas.'
-                    )
-                    return render(request, 'envios/form.html', {'form': form})
-
-                encomienda.empleado_registro = empleado
-                encomienda.save()
+                enc = form.save(commit=False)
+                enc.empleado_registro = Empleado.objects.get(
+                    email=request.user.email
+                )
+                enc.save()
                 messages.success(
                     request,
-                    f'✅ Encomienda {encomienda.codigo} creada exitosamente.'
+                    f'Encomienda {enc.codigo} registrada correctamente.'
                 )
-                return redirect('detalle', pk=encomienda.pk)
-            except ValidationError as e:
-                messages.error(request, f'Error de validación: {e.message}')
+                # Patrón PRG: redirige para evitar reenvío
+                return redirect('encomienda_detalle', pk=enc.pk)
+            except Empleado.DoesNotExist:
+                messages.error(
+                    request,
+                    f'No existe un Empleado con el email "{request.user.email}". '
+                    'Crea el empleado en el Admin con ese email antes de registrar encomiendas.'
+                )
         else:
-            messages.error(
-                request,
-                '❌ Por favor corrige los errores del formulario.'
-            )
+            messages.error(request, 'Por favor corrige los errores del formulario.')
     else:
         form = EncomiendaForm()
 
-    return render(request, 'envios/form.html', {'form': form, 'accion': 'Crear'})
+    return render(request, 'envios/form.html', {
+        'form':   form,
+        'titulo': 'Nueva Encomienda',
+    })
 
 
 # ─────────────────────────────────────────────────────────
@@ -142,11 +129,8 @@ def crear_encomienda(request):
 # ─────────────────────────────────────────────────────────
 
 @login_required
-def cambiar_estado_encomienda(request, pk):
-    """
-    Cambia el estado de una encomienda y registra el historial.
-    Solo acepta POST.
-    """
+def encomienda_cambiar_estado(request, pk):
+    """Cambia el estado y registra en el historial. Solo acepta POST."""
     encomienda = get_object_or_404(Encomienda, pk=pk)
 
     if request.method == 'POST':
@@ -162,15 +146,17 @@ def cambiar_estado_encomienda(request, pk):
 
             if not empleado:
                 messages.error(request, 'No hay empleados registrados para registrar el cambio.')
-                return redirect('detalle', pk=pk)
+                return redirect('encomienda_detalle', pk=pk)
 
             try:
-                encomienda.cambiar_estado(nuevo_estado, empleado=empleado, observacion=observacion)
+                encomienda.cambiar_estado(
+                    nuevo_estado, empleado=empleado, observacion=observacion
+                )
                 messages.success(
                     request,
-                    f'✅ Estado actualizado a "{encomienda.get_estado_display()}" correctamente.'
+                    f'Estado actualizado a "{encomienda.get_estado_display()}" correctamente.'
                 )
             except ValueError as e:
                 messages.warning(request, str(e))
 
-    return redirect('detalle', pk=pk)
+    return redirect('encomienda_detalle', pk=pk)

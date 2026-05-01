@@ -38,6 +38,7 @@ TEMPLATES = [
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -84,9 +85,18 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [BASE_DIR / 'static']
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # ── Autenticación ────────────────────────────────────────
-LOGIN_URL          = '/accounts/login/'
-LOGIN_REDIRECT_URL = '/'
+LOGIN_URL           = '/accounts/login/'
+LOGIN_REDIRECT_URL  = '/'
 LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# ── Sesiones (8 horas de jornada laboral) ──────────────────
+SESSION_ENGINE                = 'django.contrib.sessions.backends.db'
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_COOKIE_AGE            = 60 * 60 * 8  # 8 horas
+SESSION_COOKIE_SECURE         = False         # True en producción
+SESSION_COOKIE_NAME           = 'encomiendas_session'

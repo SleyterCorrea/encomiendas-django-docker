@@ -11,7 +11,7 @@
     </h1>
     <p class="text-muted mb-0 small">Resumen general del sistema</p>
   </div>
-  <a href="{% url 'crear' %}" class="btn btn-warning fw-semibold">
+  <a href="{% url 'encomienda_crear' %}" class="btn btn-warning fw-semibold">
     <i class="bi bi-plus-circle me-1"></i>Nueva Encomienda
   </a>
 </div>
@@ -29,7 +29,7 @@
         <div>
           <div class="stat-number text-primary">{{ total_activas }}</div>
           <div class="stat-label">Encomiendas activas</div>
-          <a href="{% url 'lista' %}?estado=PE" class="stat-link">Ver pendientes →</a>
+          <a href="{% url 'encomienda_lista' %}?estado=PE" class="stat-link">Ver pendientes →</a>
         </div>
       </div>
     </div>
@@ -45,7 +45,7 @@
         <div>
           <div class="stat-number text-info">{{ total_transito }}</div>
           <div class="stat-label">En tránsito</div>
-          <a href="{% url 'lista' %}?estado=TR" class="stat-link">Ver en tránsito →</a>
+          <a href="{% url 'encomienda_lista' %}?estado=TR" class="stat-link">Ver en tránsito →</a>
         </div>
       </div>
     </div>
@@ -73,7 +73,7 @@
 <div class="card border-0 shadow-sm">
   <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
     <span class="fw-semibold"><i class="bi bi-clock-history me-2"></i>Últimas encomiendas</span>
-    <a href="{% url 'lista' %}" class="btn btn-outline-light btn-sm">Ver todas</a>
+    <a href="{% url 'encomienda_lista' %}" class="btn btn-outline-light btn-sm">Ver todas</a>
   </div>
   <div class="card-body p-0">
     {% if ultimas %}
@@ -106,7 +106,7 @@
             </td>
             <td class="text-muted small">{{ enc.fecha_registro|date:"d/m/Y" }}</td>
             <td>
-              <a href="{% url 'detalle' enc.pk %}" class="btn btn-sm btn-outline-secondary">
+              <a href="{% url 'encomienda_detalle' enc.pk %}" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-eye"></i>
               </a>
             </td>
@@ -120,7 +120,7 @@
       <i class="bi bi-inbox fs-1 d-block mb-2"></i>
       No hay encomiendas registradas aún.
       <div class="mt-2">
-        <a href="{% url 'crear' %}" class="btn btn-warning btn-sm">
+        <a href="{% url 'encomienda_crear' %}" class="btn btn-warning btn-sm">
           <i class="bi bi-plus-circle me-1"></i>Crear primera encomienda
         </a>
       </div>
