@@ -7,12 +7,12 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
   <div>
     <h1 class="h3 mb-0 fw-bold">
-      <i class="bi bi-speedometer2 me-2 text-warning"></i>Dashboard
+      <i class="fas fa-tachometer-alt me-2 text-warning"></i>Dashboard
     </h1>
     <p class="text-muted mb-0 small">Resumen general del sistema</p>
   </div>
   <a href="{% url 'encomienda_crear' %}" class="btn btn-warning fw-semibold">
-    <i class="bi bi-plus-circle me-1"></i>Nueva Encomienda
+    <i class="fas fa-plus-circle me-1"></i>Nueva Encomienda
   </a>
 </div>
 
@@ -24,7 +24,7 @@
     <div class="card stat-card border-0 shadow-sm h-100">
       <div class="card-body d-flex align-items-center gap-3">
         <div class="stat-icon bg-primary-soft text-primary">
-          <i class="bi bi-box-seam fs-2"></i>
+          <i class="fas fa-box fa-2x"></i>
         </div>
         <div>
           <div class="stat-number text-primary">{{ total_activas }}</div>
@@ -40,10 +40,10 @@
     <div class="card stat-card border-0 shadow-sm h-100">
       <div class="card-body d-flex align-items-center gap-3">
         <div class="stat-icon bg-info-soft text-info">
-          <i class="bi bi-truck fs-2"></i>
+          <i class="fas fa-truck fa-2x"></i>
         </div>
         <div>
-          <div class="stat-number text-info">{{ total_transito }}</div>
+          <div class="stat-number text-info">{{ en_transito }}</div>
           <div class="stat-label">En tránsito</div>
           <a href="{% url 'encomienda_lista' %}?estado=TR" class="stat-link">Ver en tránsito →</a>
         </div>
@@ -56,10 +56,10 @@
     <div class="card stat-card border-0 shadow-sm h-100">
       <div class="card-body d-flex align-items-center gap-3">
         <div class="stat-icon bg-danger-soft text-danger">
-          <i class="bi bi-exclamation-triangle fs-2"></i>
+          <i class="fas fa-exclamation-triangle fa-2x"></i>
         </div>
         <div>
-          <div class="stat-number text-danger">{{ total_retraso }}</div>
+          <div class="stat-number text-danger">{{ con_retraso }}</div>
           <div class="stat-label">Con retraso</div>
           <span class="stat-link text-muted">Requieren atención</span>
         </div>
@@ -72,7 +72,7 @@
 <!-- Últimas encomiendas -->
 <div class="card border-0 shadow-sm">
   <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-    <span class="fw-semibold"><i class="bi bi-clock-history me-2"></i>Últimas encomiendas</span>
+    <span class="fw-semibold"><i class="fas fa-history me-2"></i>Últimas encomiendas</span>
     <a href="{% url 'encomienda_lista' %}" class="btn btn-outline-light btn-sm">Ver todas</a>
   </div>
   <div class="card-body p-0">
@@ -93,7 +93,7 @@
         <tbody>
           {% for enc in ultimas %}
           <tr>
-            <td><code class="fw-bold">{{ enc.codigo }}</code></td>
+            <td><code class="fw-bold text-primary">{{ enc.codigo }}</code></td>
             <td>{{ enc.remitente.nombre_completo }}</td>
             <td>{{ enc.destinatario.nombre_completo }}</td>
             <td>
@@ -106,8 +106,8 @@
             </td>
             <td class="text-muted small">{{ enc.fecha_registro|date:"d/m/Y" }}</td>
             <td>
-              <a href="{% url 'encomienda_detalle' enc.pk %}" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-eye"></i>
+              <a href="{% url 'encomienda_detalle' enc.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                <i class="fas fa-eye"></i>
               </a>
             </td>
           </tr>
@@ -117,11 +117,11 @@
     </div>
     {% else %}
     <div class="text-center py-5 text-muted">
-      <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+      <i class="fas fa-inbox fa-3x d-block mb-2"></i>
       No hay encomiendas registradas aún.
       <div class="mt-2">
         <a href="{% url 'encomienda_crear' %}" class="btn btn-warning btn-sm">
-          <i class="bi bi-plus-circle me-1"></i>Crear primera encomienda
+          <i class="fas fa-plus-circle me-1"></i>Crear primera encomienda
         </a>
       </div>
     </div>

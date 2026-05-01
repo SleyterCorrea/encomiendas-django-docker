@@ -34,7 +34,7 @@
     <div class="card border-0 shadow-sm">
       <div class="card-header bg-dark text-white py-3">
         <h1 class="h5 mb-0 fw-bold">
-          <i class="bi bi-{% if accion == 'Editar' %}pencil{% else %}plus-circle{% endif %} me-2 text-warning"></i>
+          <i class="{% if accion == 'Editar' %}fas fa-pencil-alt{% else %}fas fa-plus-circle{% endif %} me-2 text-warning"></i>
           {% if accion == 'Editar' %}Editar encomienda{% else %}Registrar nueva encomienda{% endif %}
         </h1>
       </div>
@@ -45,7 +45,7 @@
 
           <!-- ── Identificación ───────────────────────────── -->
           <div class="form-section-title">
-            <i class="bi bi-tag me-1"></i>Identificación del paquete
+            <i class="fas fa-tag me-1"></i>Identificación del paquete
           </div>
           <div class="row g-3 mb-4">
             <div class="col-md-5">
@@ -89,7 +89,7 @@
 
           <!-- ── Partes involucradas ──────────────────────── -->
           <div class="form-section-title">
-            <i class="bi bi-people me-1"></i>Partes involucradas
+            <i class="fas fa-users me-1"></i>Partes involucradas
           </div>
           <div class="row g-3 mb-4">
             <div class="col-md-6">
@@ -123,7 +123,7 @@
 
           <!-- ── Costo y fechas ───────────────────────────── -->
           <div class="form-section-title">
-            <i class="bi bi-cash-coin me-1"></i>Costo y fechas
+            <i class="fas fa-coins me-1"></i>Costo y fechas
           </div>
           <div class="row g-3 mb-4">
             <div class="col-md-4">
@@ -151,7 +151,7 @@
 
           <!-- ── Observaciones ────────────────────────────── -->
           <div class="form-section-title">
-            <i class="bi bi-chat-left-text me-1"></i>Observaciones adicionales
+            <i class="fas fa-comment-alt me-1"></i>Observaciones adicionales
           </div>
           <div class="mb-4">
             {{ form.observaciones }}
@@ -164,7 +164,7 @@
           {% if form.non_field_errors %}
           <div class="alert alert-danger">
             {% for error in form.non_field_errors %}
-            <div><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ error }}</div>
+            <div><i class="fas fa-exclamation-triangle me-1"></i>{{ error }}</div>
             {% endfor %}
           </div>
           {% endif %}
@@ -172,10 +172,10 @@
           <!-- Botones -->
           <div class="d-flex gap-2 justify-content-end">
             <a href="{% url 'encomienda_lista' %}" class="btn btn-outline-secondary">
-              <i class="bi bi-x-circle me-1"></i>Cancelar
+              <i class="fas fa-times-circle me-1"></i>Cancelar
             </a>
             <button type="submit" class="btn btn-warning fw-semibold px-4" id="btn-guardar">
-              <i class="bi bi-save me-1"></i>
+              <i class="fas fa-save me-1"></i>
               {% if accion == 'Editar' %}Guardar cambios{% else %}Registrar encomienda{% endif %}
             </button>
           </div>
