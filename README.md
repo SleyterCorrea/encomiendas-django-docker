@@ -44,6 +44,26 @@ docker compose exec web python manage.py createsuperuser
 
 La app queda en `http://localhost:8001` y el admin en `http://localhost:8001/admin/`.
 
+# Cargar datos de prueba (seed)
+
+Para poblar la base de datos con datos iniciales (clientes, rutas, empleados y encomiendas de ejemplo) ejecuta:
+
+```bash
+docker compose exec web python manage.py seed_data
+```
+
+Esto crea:
+- **8 clientes** con distintos tipos de documento (DNI, RUC, Pasaporte)
+- **8 rutas** entre ciudades del Perú con precio y días de entrega
+- **3 empleados** con rutas asignadas
+- **8 encomiendas** en distintos estados (Pendiente, En Tránsito, En Destino, Entregado)
+
+Si quieres limpiar todo y empezar de cero:
+
+```bash
+docker compose exec web python manage.py seed_data --clear
+```
+
 ---
 
 ## Variables de entorno
@@ -135,14 +155,17 @@ Existe una versión simplificada en `/api/v2/encomiendas/` (solo lectura) que de
 ## Estructura del proyecto
 
 ```
-├── config/          # Settings, URLs, choices globales
-├── envios/          # App principal: modelos, vistas, serializers, viewsets, tests
-├── clientes/        # App de clientes
-├── rutas/           # App de rutas
-├── api/             # Infraestructura de la API: filtros, paginación, permisos, throttles
-│   └── v2/          # Versión 2 de la API
-├── templates/       # Templates HTML del panel web
-├── static/          # CSS, JS
+├── config/              # Settings, URLs, choices globales
+├── envios/              # App principal: modelos, vistas, serializers, viewsets, tests
+│   └── management/
+│       └── commands/
+│           └── seed_data.py   # Comando para poblar la BD con datos de prueba
+├── clientes/            # App de clientes
+├── rutas/               # App de rutas
+├── api/                 # Infraestructura de la API: filtros, paginación, permisos, throttles
+│   └── v2/              # Versión 2 de la API
+├── templates/           # Templates HTML del panel web
+├── static/              # CSS, JS
 └── docker-compose.yml
 ```
 
