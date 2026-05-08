@@ -17,6 +17,9 @@ urlpatterns = [
     # ── API REST v1 ──────────────────────────────────────────────
     path('api/v1/', include('api.urls')),
 
+    # ── API REST v2 (simplificada, solo lectura) ──────────────────
+    path('api/v2/', include('api.v2.urls')),
+
     # ── Documentación OpenAPI ────────────────────────────────────
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path('api/docs/',   SpectacularSwaggerView.as_view(url_name='schema'), name='swagger'),

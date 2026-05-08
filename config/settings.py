@@ -136,6 +136,16 @@ REST_FRAMEWORK = {
     ],
     # Manejo de excepciones personalizado
     'EXCEPTION_HANDLER': 'api.exceptions.encomiendas_exception_handler',
+    # Throttling (límite de peticiones)
+    'DEFAULT_THROTTLE_CLASSES': [
+        'api.throttles.EmpleadoRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'empleado':    '100/hour',   # 100 peticiones/hora para empleados
+        'login':       '5/minute',   # 5 intentos de login por minuto
+        'cambio_estado': '30/hour',  # 30 cambios de estado por hora
+        'anon':        '20/hour',    # anónimos (sin auth)
+    },
 }
 
 # ── JWT: configuración de tokens ──────────────────────────────────
@@ -188,3 +198,14 @@ SPECTACULAR_SETTINGS = {
     'SECURITY': [{'jwtAuth': []}],
 }
 
+# ── Redis Cache ───────────────────────────────────────────────────
+REDIS_URL = config('REDIS_URL', default='redis://redis:6379/0')
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': REDIS_URL,
+        'TIMEOUT': 60 * 15,   # 15 minutos por defecto
+        'KEY_PREFIX': 'encomiendas',
+    }
+}
