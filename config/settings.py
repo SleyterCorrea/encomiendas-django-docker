@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import timedelta
 from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -14,12 +15,23 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    # Apps del proyecto
     'envios',
     'clientes',
     'rutas',
+    # Django REST Framework
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
+    'django_filters',
+    'drf_spectacular',
+    'corsheaders',
+    # App API
+    'api',
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # <-- PRIMERO para CORS
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -100,3 +112,79 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False
 SESSION_COOKIE_AGE            = 60 * 60 * 8  # 8 horas
 SESSION_COOKIE_SECURE         = False         # True en producción
 SESSION_COOKIE_NAME           = 'encomiendas_session'
+
+# ── Django REST Framework ─────────────────────────────────────────
+REST_FRAMEWORK = {
+    # Autenticación: JWT por defecto para toda la API
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    # Permisos: requiere autenticación por defecto
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    # Paginación: 15 registros por página
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 15,
+    # Documentación automática con drf-spectacular
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Filtros: django-filter como backend por defecto
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    # Manejo de excepciones personalizado
+    'EXCEPTION_HANDLER': 'api.exceptions.encomiendas_exception_handler',
+}
+
+# ── JWT: configuración de tokens ──────────────────────────────────
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME':  timedelta(minutes=60),   # token expira en 1 hora
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),        # refresh expira en 7 días
+    'ROTATE_REFRESH_TOKENS':  True,                     # rotar el refresh en cada uso
+    'BLACKLIST_AFTER_ROTATION': True,
+    'AUTH_HEADER_TYPES':      ('Bearer',),              # Authorization: Bearer <token>
+    'USER_ID_FIELD':          'id',
+    'USER_ID_CLAIM':          'user_id',
+}
+
+# ── CORS: permitir peticiones desde el frontend ───────────────────
+CORS_ALLOW_ALL_ORIGINS = True  # en desarrollo
+# En producción reemplazar por:
+# CORS_ALLOWED_ORIGINS = ['https://tu-frontend.com']
+
+# ── Documentación de la API (drf-spectacular) ─────────────────────
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'API Sistema de Gestión de Encomiendas',
+    'DESCRIPTION': '''
+        API REST para gestionar el ciclo de vida de encomiendas.
+        Incluye registro de envíos, cambio de estado, historial y estadísticas.
+
+        **Cómo autenticarse:**
+        1. Ejecuta POST /api/v1/auth/token/ con usuario y contraseña
+        2. Copia el valor del campo "access"
+        3. Haz clic en "Authorize" (arriba a la derecha)
+        4. Pega SOLO el token (sin "Bearer ") en el campo y haz clic en Authorize
+    ''',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SORT_OPERATIONS': False,
+    'TAGS': [
+        {'name': 'Encomiendas', 'description': 'Gestión de envíos'},
+        {'name': 'Clientes',    'description': 'Listado de clientes activos'},
+        {'name': 'Rutas',       'description': 'Rutas disponibles'},
+        {'name': 'Auth',        'description': 'Autenticación JWT'},
+    ],
+    # Swagger UI configuración
+    'SWAGGER_UI_SETTINGS': {
+        'persistAuthorization': True,   # mantiene el token entre recargas
+        'deepLinking': True,            # links directos a endpoints
+        'displayRequestDuration': True,  # muestra tiempo de respuesta
+        'filter': True,                  # buscador de endpoints
+    },
+    # Esquema de seguridad JWT explícito para Swagger UI
+    'SECURITY': [{'jwtAuth': []}],
+}
+
