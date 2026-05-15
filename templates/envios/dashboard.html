@@ -9,14 +9,25 @@
     <h1 class="h3 mb-0 fw-bold">
       <i class="fas fa-tachometer-alt me-2 text-warning"></i>Dashboard
     </h1>
-    <p class="text-muted mb-0 small">Resumen general del sistema</p>
+    <p class="text-muted mb-0 small">
+      Resumen general del sistema
+      <!-- Sesión 07: indicador de conexión WebSocket -->
+      <span id="ws-status" class="ms-2 badge bg-secondary" title="Estado de conexión en tiempo real">
+        <i class="fas fa-circle me-1" style="font-size:.55rem"></i>Conectando…
+      </span>
+    </p>
   </div>
-  <a href="{% url 'encomienda_crear' %}" class="btn btn-warning fw-semibold">
-    <i class="fas fa-plus-circle me-1"></i>Nueva Encomienda
-  </a>
+  <div class="d-flex gap-2">
+    <button id="ws-refresh-btn" class="btn btn-outline-secondary btn-sm" title="Actualizar stats manualmente" style="display:none">
+      <i class="fas fa-sync-alt me-1"></i>Refresh
+    </button>
+    <a href="{% url 'encomienda_crear' %}" class="btn btn-warning fw-semibold">
+      <i class="fas fa-plus-circle me-1"></i>Nueva Encomienda
+    </a>
+  </div>
 </div>
 
-<!-- Tarjetas de contadores -->
+<!-- Tarjetas de contadores — con IDs para actualización en tiempo real -->
 <div class="row g-4 mb-5">
 
   <!-- Encomiendas activas -->
@@ -27,7 +38,8 @@
           <i class="fas fa-box fa-2x"></i>
         </div>
         <div>
-          <div class="stat-number text-primary">{{ total_activas }}</div>
+          <!-- Sesión 07: id="stat-activas" para actualización WebSocket -->
+          <div class="stat-number text-primary" id="stat-activas">{{ total_activas }}</div>
           <div class="stat-label">Encomiendas activas</div>
           <a href="{% url 'encomienda_lista' %}?estado=PE" class="stat-link">Ver pendientes →</a>
         </div>
@@ -43,7 +55,8 @@
           <i class="fas fa-truck fa-2x"></i>
         </div>
         <div>
-          <div class="stat-number text-info">{{ en_transito }}</div>
+          <!-- Sesión 07: id="stat-transito" para actualización WebSocket -->
+          <div class="stat-number text-info" id="stat-transito">{{ en_transito }}</div>
           <div class="stat-label">En tránsito</div>
           <a href="{% url 'encomienda_lista' %}?estado=TR" class="stat-link">Ver en tránsito →</a>
         </div>
@@ -59,7 +72,8 @@
           <i class="fas fa-exclamation-triangle fa-2x"></i>
         </div>
         <div>
-          <div class="stat-number text-danger">{{ con_retraso }}</div>
+          <!-- Sesión 07: id="stat-retraso" para actualización WebSocket -->
+          <div class="stat-number text-danger" id="stat-retraso">{{ con_retraso }}</div>
           <div class="stat-label">Con retraso</div>
           <span class="stat-link text-muted">Requieren atención</span>
         </div>
@@ -69,63 +83,91 @@
 
 </div>
 
-<!-- Últimas encomiendas -->
-<div class="card border-0 shadow-sm">
-  <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-    <span class="fw-semibold"><i class="fas fa-history me-2"></i>Últimas encomiendas</span>
-    <a href="{% url 'encomienda_lista' %}" class="btn btn-outline-light btn-sm">Ver todas</a>
-  </div>
-  <div class="card-body p-0">
-    {% if ultimas %}
-    <div class="table-responsive">
-      <table class="table table-hover align-middle mb-0">
-        <thead class="table-light">
-          <tr>
-            <th>Código</th>
-            <th>Remitente</th>
-            <th>Destinatario</th>
-            <th>Ruta</th>
-            <th>Estado</th>
-            <th>Fecha</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for enc in ultimas %}
-          <tr>
-            <td><code class="fw-bold text-primary">{{ enc.codigo }}</code></td>
-            <td>{{ enc.remitente.nombre_completo }}</td>
-            <td>{{ enc.destinatario.nombre_completo }}</td>
-            <td>
-              <span class="text-muted small">{{ enc.ruta.origen }} → {{ enc.ruta.destino }}</span>
-            </td>
-            <td>
-              <span class="badge-estado badge-estado--{{ enc.estado }}">
-                {{ enc.get_estado_display }}
-              </span>
-            </td>
-            <td class="text-muted small">{{ enc.fecha_registro|date:"d/m/Y" }}</td>
-            <td>
-              <a href="{% url 'encomienda_detalle' enc.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
-                <i class="fas fa-eye"></i>
-              </a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-    {% else %}
-    <div class="text-center py-5 text-muted">
-      <i class="fas fa-inbox fa-3x d-block mb-2"></i>
-      No hay encomiendas registradas aún.
-      <div class="mt-2">
-        <a href="{% url 'encomienda_crear' %}" class="btn btn-warning btn-sm">
-          <i class="fas fa-plus-circle me-1"></i>Crear primera encomienda
-        </a>
+<div class="row g-4">
+
+  <!-- Últimas encomiendas -->
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <span class="fw-semibold"><i class="fas fa-history me-2"></i>Últimas encomiendas</span>
+        <a href="{% url 'encomienda_lista' %}" class="btn btn-outline-light btn-sm">Ver todas</a>
+      </div>
+      <div class="card-body p-0">
+        {% if ultimas %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Código</th>
+                <th>Remitente</th>
+                <th>Destinatario</th>
+                <th>Ruta</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for enc in ultimas %}
+              <tr>
+                <td><code class="fw-bold text-primary">{{ enc.codigo }}</code></td>
+                <td>{{ enc.remitente.nombre_completo }}</td>
+                <td>{{ enc.destinatario.nombre_completo }}</td>
+                <td>
+                  <span class="text-muted small">{{ enc.ruta.origen }} → {{ enc.ruta.destino }}</span>
+                </td>
+                <td>
+                  <span class="badge-estado badge-estado--{{ enc.estado }}">
+                    {{ enc.get_estado_display }}
+                  </span>
+                </td>
+                <td class="text-muted small">{{ enc.fecha_registro|date:"d/m/Y" }}</td>
+                <td>
+                  <a href="{% url 'encomienda_detalle' enc.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                    <i class="fas fa-eye"></i>
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+          <i class="fas fa-inbox fa-3x d-block mb-2"></i>
+          No hay encomiendas registradas aún.
+          <div class="mt-2">
+            <a href="{% url 'encomienda_crear' %}" class="btn btn-warning btn-sm">
+              <i class="fas fa-plus-circle me-1"></i>Crear primera encomienda
+            </a>
+          </div>
+        </div>
+        {% endif %}
       </div>
     </div>
-    {% endif %}
   </div>
+
+  <!-- Sesión 07: Feed de actividad en tiempo real -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+        <span class="fw-semibold">
+          <i class="fas fa-satellite-dish me-2 text-success"></i>Feed en vivo
+        </span>
+        <span class="badge bg-success" id="feed-badge">0</span>
+      </div>
+      <div class="card-body p-0" style="max-height:400px; overflow-y:auto;" id="activity-feed">
+        <div class="text-center py-4 text-muted small" id="feed-empty">
+          <i class="fas fa-circle-notch fa-spin d-block mb-2"></i>
+          Esperando actividad…
+        </div>
+      </div>
+      <div class="card-footer bg-light py-2">
+        <small class="text-muted" id="feed-last-update">Sin actividad reciente</small>
+      </div>
+    </div>
+  </div>
+
 </div>
 {% endblock %}
+
