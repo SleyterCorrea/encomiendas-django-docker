@@ -9,6 +9,9 @@ DEBUG = config('DEBUG', cast=bool, default=False)
 ALLOWED_HOSTS = [host.strip() for host in config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',') if host.strip()]
 
 INSTALLED_APPS = [
+    # Sesión 07: daphne PRIMERO para tomar control del servidor ASGI
+    'daphne',
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -33,6 +36,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # <-- PRIMERO para CORS
     'django.middleware.security.SecurityMiddleware',
+    # WhiteNoise: sirve archivos estáticos con Daphne/ASGI (va después de Security)
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -208,4 +213,17 @@ CACHES = {
         'TIMEOUT': 60 * 15,   # 15 minutos por defecto
         'KEY_PREFIX': 'encomiendas',
     }
+}
+
+# ── Sesión 07: Channel Layers (WebSockets) ────────────────────────
+# Redis como backend del Channel Layer para comunicación en tiempo real
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [config('REDIS_URL', default='redis://redis:6379/1')],
+            'capacity': 1500,          # máximo de mensajes en cola
+            'expiry': 10,              # mensajes expiran en 10 segundos
+        },
+    },
 }
