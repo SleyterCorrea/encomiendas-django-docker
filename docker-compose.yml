@@ -1,7 +1,8 @@
 services:
   web:
     build: .
-    command: python manage.py runserver 0.0.0.0:8000
+    # Sesión 07: Daphne como servidor ASGI para WebSockets
+    command: daphne -b 0.0.0.0 -p 8000 config.asgi:application
     volumes:
       - .:/app
     ports:
@@ -10,6 +11,8 @@ services:
       - .env
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: on-failure
 
@@ -46,6 +49,12 @@ services:
     ports:
       - "6379:6379"
     restart: on-failure
+    # Sesión 07: health check para que web espere a Redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 volumes:
   postgres_data:

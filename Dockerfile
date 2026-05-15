@@ -12,6 +12,9 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 
 COPY . .
 
+# Recolectar archivos estáticos para que WhiteNoise los sirva
+RUN python manage.py collectstatic --noinput --settings=config.settings 2>/dev/null || true
+
 EXPOSE 8000
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["daphne", "-b", "0.0.0.0", "-p", "8000", "config.asgi:application"]

@@ -7,3 +7,9 @@ django-filter==25.1
 drf-spectacular==0.28.0
 django-cors-headers==4.7.0
 django-redis==5.4.0
+# Sesión 07 — WebSockets y Sistemas Reactivos
+daphne==4.1.2
+channels==4.2.0
+channels-redis==4.2.1
+# Archivos estáticos con servidor ASGI
+whitenoise==6.9.0
