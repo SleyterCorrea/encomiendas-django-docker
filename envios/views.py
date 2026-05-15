@@ -8,6 +8,8 @@ from django.utils import timezone
 from config.choices import EstadoEnvio
 from .models import Encomienda, Empleado, HistorialEstado
 from .forms import EncomiendaForm, CambiarEstadoForm
+# Sesión 07: notificaciones WebSocket desde la vista síncrona
+from .async_services import notify_dashboard_update, notify_encomienda_update, notify_activity
 
 
 # ─────────────────────────────────────────────────────────
@@ -155,6 +157,13 @@ def encomienda_cambiar_estado(request, pk):
                 messages.success(
                     request,
                     f'Estado actualizado a "{encomienda.get_estado_display()}" correctamente.'
+                )
+                # Sesión 07: notificar vía WebSocket
+                notify_encomienda_update(encomienda.pk)
+                notify_dashboard_update()
+                notify_activity(
+                    f'Encomienda {encomienda.codigo} cambió a "{encomienda.get_estado_display()}"',
+                    usuario=request.user.username,
                 )
             except ValueError as e:
                 messages.warning(request, str(e))

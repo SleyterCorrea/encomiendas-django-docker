@@ -33,6 +33,13 @@ from api.filters import EncomiendaFilter
 from api.pagination import EncomiendaPagination, HistorialPagination
 from api.permissions import EsEmpleadoActivo, EsPropietarioOAdmin
 from api.throttles import EmpleadoRateThrottle, CambioEstadoThrottle
+# Sesión 07: notificaciones WebSocket
+from envios.async_services import (
+    notify_dashboard_update,
+    notify_encomienda_update,
+    notify_activity,
+    notify_bulk_progress,
+)
 
 
 class EncomiendaViewSet(viewsets.ModelViewSet):
@@ -132,6 +139,13 @@ class EncomiendaViewSet(viewsets.ModelViewSet):
             enc.cambiar_estado(nuevo_estado, empleado, observacion)
             # Invalidar cache de estadísticas al cambiar estado
             cache.delete('encomiendas:estadisticas')
+            # Sesión 07: notificar vía WebSocket en tiempo real
+            notify_encomienda_update(enc.pk)
+            notify_dashboard_update()
+            notify_activity(
+                f'Encomienda {enc.codigo} cambió a "{enc.get_estado_display()}"',
+                usuario=request.user.username,
+            )
             return Response(EncomiendaSerializer(enc).data)
         except ValueError as e:
             return Response(
@@ -234,8 +248,27 @@ class EncomiendaViewSet(viewsets.ModelViewSet):
             data=request.data, many=True, context={'request': request}
         )
         if serializer.is_valid():
-            serializer.save(empleado_registro=empleado)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            # Sesión 07: reportar progreso en tiempo real
+            total = len(request.data)
+            creadas = []
+            for i, item_data in enumerate(request.data, start=1):
+                item_serializer = EncomiendaSerializer(
+                    data=item_data, context={'request': request}
+                )
+                if item_serializer.is_valid():
+                    obj = item_serializer.save(empleado_registro=empleado)
+                    creadas.append(item_serializer.data)
+                    notify_bulk_progress(total=total, done=i, encomienda_id=obj.pk)
+                else:
+                    notify_bulk_progress(total=total, done=i - 1, error=str(item_serializer.errors))
+
+            # Notificar dashboard al terminar
+            notify_dashboard_update()
+            notify_activity(
+                f'Bulk create completado: {len(creadas)}/{total} encomiendas creadas',
+                usuario=request.user.username,
+            )
+            return Response(creadas, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # ── Acción: bulk_estado ───────────────────────────────────────
@@ -288,11 +321,20 @@ class EncomiendaViewSet(viewsets.ModelViewSet):
             try:
                 enc.cambiar_estado(nuevo_estado, empleado, observacion)
                 actualizadas.append(enc.id)
+                # Sesión 07: notificar cada encomienda en tiempo real
+                notify_encomienda_update(enc.pk)
             except ValueError as e:
                 errores.append({'id': enc.id, 'error': str(e)})
 
         # Invalidar cache de estadísticas
         cache.delete('encomiendas:estadisticas')
+        # Sesión 07: notificar dashboard y feed de actividad
+        if actualizadas:
+            notify_dashboard_update()
+            notify_activity(
+                f'Bulk estado: {len(actualizadas)} encomiendas → "{nuevo_estado}"',
+                usuario=request.user.username,
+            )
 
         return Response({
             'actualizadas': actualizadas,
