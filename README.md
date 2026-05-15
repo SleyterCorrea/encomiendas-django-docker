@@ -1,12 +1,12 @@
 # Sistema de Gestión de Encomiendas
 
-Proyecto académico desarrollado en Django con Docker. Cubre desde los modelos y vistas tradicionales hasta una API REST completa con autenticación JWT.
+Proyecto académico desarrollado en Django con Docker. Empezamos con modelos y vistas básicas, luego agregamos API REST con JWT, y en la sesión 7 integramos WebSockets para que el sistema sea reactivo en tiempo real.
 
 ---
 
 ## ¿Qué hace este sistema?
 
-Es una aplicación web para gestionar el ciclo de vida de encomiendas: registro, seguimiento de estados (pendiente → en tránsito → entregado), historial de cambios y reportes. Tiene panel web con login de empleados y una API REST para integraciones externas.
+Aplicación web para gestionar encomiendas: registro, seguimiento de estados (pendiente → en tránsito → en destino → entregado), historial de cambios por empleado y estadísticas. Tiene panel web con login y una API REST completa. Desde la sesión 7, los cambios se propagan en tiempo real a todos los usuarios conectados sin recargar la página.
 
 ---
 
@@ -14,51 +14,42 @@ Es una aplicación web para gestionar el ciclo de vida de encomiendas: registro,
 
 - **Python 3.11 / Django 5.2**
 - **PostgreSQL 15** — base de datos principal
-- **Redis 7** — caché para estadísticas
-- **Docker + Docker Compose** — entorno de desarrollo reproducible
+- **Redis 7** — caché de estadísticas + Channel Layer para WebSockets
+- **Docker + Docker Compose** — entorno reproducible
 - **Django REST Framework** — API REST
-- **SimpleJWT** — autenticación con tokens
+- **SimpleJWT** — tokens de acceso y refresco
 - **drf-spectacular** — documentación OpenAPI / Swagger
+- **Django Channels + Daphne** — WebSockets y servidor ASGI
+- **WhiteNoise** — archivos estáticos con servidor ASGI
 
 ---
 
 ## Levantar el proyecto
 
-Requiere tener Docker instalado. Nada más.
+Solo necesitas Docker instalado.
 
 ```bash
 git clone https://github.com/SleyterCorrea/encomiendas-django-docker.git
 cd encomiendas-django-docker
 
-# Copiar variables de entorno
 cp .env.example .env
 
-# Construir y levantar
 docker compose build
 docker compose up -d
 
-# Migraciones y superusuario
 docker compose exec web python manage.py migrate
 docker compose exec web python manage.py createsuperuser
 ```
 
 La app queda en `http://localhost:8001` y el admin en `http://localhost:8001/admin/`.
 
-# Cargar datos de prueba (seed)
-
-Para poblar la base de datos con datos iniciales (clientes, rutas, empleados y encomiendas de ejemplo) ejecuta:
+## Cargar datos de prueba
 
 ```bash
 docker compose exec web python manage.py seed_data
 ```
 
-Esto crea:
-- **8 clientes** con distintos tipos de documento (DNI, RUC, Pasaporte)
-- **8 rutas** entre ciudades del Perú con precio y días de entrega
-- **3 empleados** con rutas asignadas
-- **8 encomiendas** en distintos estados (Pendiente, En Tránsito, En Destino, Entregado)
-
-Si quieres limpiar todo y empezar de cero:
+Crea 8 clientes, 8 rutas, 3 empleados y 8 encomiendas en distintos estados. Para limpiar todo y volver a cargar:
 
 ```bash
 docker compose exec web python manage.py seed_data --clear
@@ -67,8 +58,6 @@ docker compose exec web python manage.py seed_data --clear
 ---
 
 ## Variables de entorno
-
-El archivo `.env` necesita estas variables:
 
 ```
 SECRET_KEY=cambia-esto-en-produccion
@@ -83,9 +72,25 @@ REDIS_URL=redis://redis:6379/0
 
 ---
 
+## WebSockets — tiempo real (Sesión 07)
+
+El sistema tiene tres canales WebSocket activos cuando entrás al dashboard:
+
+| Endpoint WS | Descripción |
+|-------------|-------------|
+| `ws/dashboard/` | Actualiza los contadores (activas, en tránsito, retraso) automáticamente |
+| `ws/encomienda/<pk>/` | Notifica cambios de estado en una encomienda específica |
+| `ws/feed/` | Feed global — todos los empleados conectados ven cada cambio en vivo |
+
+El badge "En vivo" en el dashboard indica que la conexión WebSocket está activa. Cuando cambiás el estado de una encomienda (desde el panel web o la API), el dashboard de cualquier otro usuario conectado se actualiza sin recargar.
+
+El Channel Layer usa Redis en la base de datos 1 (`redis://redis:6379/1`) separada del caché (`redis://redis:6379/0`).
+
+---
+
 ## API REST
 
-La API vive en `/api/v1/`. Toda petición (excepto el login) requiere un token JWT en el header:
+Todos los endpoints (excepto login) requieren token JWT:
 
 ```
 Authorization: Bearer <access_token>
@@ -99,12 +104,12 @@ curl -X POST http://localhost:8001/api/v1/auth/token/ \
   -d '{"username": "admin", "password": "tu_password"}'
 ```
 
-La respuesta incluye `access` y `refresh`. El token de acceso dura 1 hora, el de refresco 7 días. El payload del JWT trae los datos del empleado directamente (código, cargo, nombre) para que el frontend no necesite hacer una petición extra.
+El token dura 1 hora, el refresh 7 días.
 
 ### Documentación interactiva
 
-- **Swagger UI**: `http://localhost:8001/api/docs/`
-- **ReDoc**: `http://localhost:8001/api/redoc/`
+- Swagger UI: `http://localhost:8001/api/docs/`
+- ReDoc: `http://localhost:8001/api/redoc/`
 
 ### Endpoints principales
 
@@ -115,16 +120,16 @@ La respuesta incluye `access` y `refresh`. El token de acceso dura 1 hora, el de
 | GET | `/api/v1/encomiendas/{id}/` | Detalle con objetos anidados |
 | PUT/PATCH | `/api/v1/encomiendas/{id}/` | Actualizar |
 | DELETE | `/api/v1/encomiendas/{id}/` | Eliminar |
-| POST | `/api/v1/encomiendas/{id}/cambiar_estado/` | Cambiar estado con historial |
-| GET | `/api/v1/encomiendas/pendientes/` | Filtro rápido: solo pendientes |
+| POST | `/api/v1/encomiendas/{id}/cambiar_estado/` | Cambiar estado |
+| GET | `/api/v1/encomiendas/pendientes/` | Solo pendientes |
 | GET | `/api/v1/encomiendas/con_retraso/` | Encomiendas vencidas |
-| GET | `/api/v1/encomiendas/estadisticas/` | Métricas generales (cacheado 15 min) |
-| POST | `/api/v1/encomiendas/bulk_create/` | Crear múltiples de una vez |
+| GET | `/api/v1/encomiendas/estadisticas/` | Métricas (cacheado 15 min en Redis) |
+| POST | `/api/v1/encomiendas/bulk_create/` | Crear varias a la vez |
 | PATCH | `/api/v1/encomiendas/bulk_estado/` | Cambiar estado en lote |
 | GET | `/api/v1/clientes/` | Clientes activos |
 | GET | `/api/v1/rutas/` | Rutas disponibles |
 
-### Filtros disponibles
+### Filtros
 
 ```
 /api/v1/encomiendas/?estado=PE
@@ -132,40 +137,40 @@ La respuesta incluye `access` y `refresh`. El token de acceso dura 1 hora, el de
 /api/v1/encomiendas/?ordering=-fecha_registro
 /api/v1/encomiendas/?desde=2026-01-01&hasta=2026-05-01
 /api/v1/encomiendas/?con_retraso=true
-/api/v1/encomiendas/?page=2&page_size=10
 ```
 
 ### API v2
 
-Existe una versión simplificada en `/api/v2/encomiendas/` (solo lectura) que devuelve menos campos y agrega un campo `resumen` con el estado en texto legible.
+`/api/v2/encomiendas/` — versión de solo lectura con menos campos y un campo `resumen` con el estado en texto.
 
 ---
 
 ## Permisos y seguridad
 
-- Solo usuarios con un Empleado activo en la BD pueden usar la API (`EsEmpleadoActivo`)
-- Los empleados regulares solo pueden modificar sus propias encomiendas (`EsPropietarioOAdmin`)
-- Los usuarios staff/admin tienen acceso completo
-- El campo `empleado_registro` y `observaciones` se ocultan para usuarios no-staff en la respuesta (`to_representation`)
-- Throttling: 100 peticiones/hora para empleados, 5 intentos/minuto para login
-- CORS habilitado para desarrollo
+- Solo usuarios con empleado activo en BD pueden usar la API (`EsEmpleadoActivo`)
+- Empleados regulares solo modifican sus propias encomiendas (`EsPropietarioOAdmin`)
+- Staff/admin tiene acceso completo
+- Throttling: 100 req/hora por empleado, 5 intentos/min en login
+- Campos sensibles (`empleado_registro`, `observaciones`) ocultos para no-staff
 
 ---
 
-## Estructura del proyecto
+## Estructura
 
 ```
-├── config/              # Settings, URLs, choices globales
-├── envios/              # App principal: modelos, vistas, serializers, viewsets, tests
-│   └── management/
-│       └── commands/
-│           └── seed_data.py   # Comando para poblar la BD con datos de prueba
-├── clientes/            # App de clientes
-├── rutas/               # App de rutas
-├── api/                 # Infraestructura de la API: filtros, paginación, permisos, throttles
-│   └── v2/              # Versión 2 de la API
-├── templates/           # Templates HTML del panel web
-├── static/              # CSS, JS
+├── config/              # Settings, URLs, ASGI, choices globales
+├── envios/              # App principal
+│   ├── consumers.py     # WebSocket consumers (Dashboard, Encomienda, Feed)
+│   ├── routing.py       # Rutas WebSocket
+│   ├── async_services.py # Funciones de broadcast al Channel Layer
+│   ├── viewsets.py      # API ViewSets con notificaciones WS integradas
+│   └── management/commands/seed_data.py
+├── clientes/
+├── rutas/
+├── api/                 # Filtros, paginación, permisos, throttles
+│   └── v2/
+├── templates/
+├── static/
 └── docker-compose.yml
 ```
 
@@ -177,27 +182,16 @@ Existe una versión simplificada en `/api/v2/encomiendas/` (solo lectura) que de
 docker compose exec web python manage.py test envios.tests.test_api --verbosity=2
 ```
 
-16 tests que cubren: listado, creación, errores de validación (400), detalle anidado, cambio de estado, autenticación (401), filtros y estadísticas.
+16 tests: listado, creación, validaciones, detalle anidado, cambio de estado, autenticación, filtros y estadísticas.
 
 ---
 
-## Panel web
-
-Además de la API, el proyecto tiene un panel web tradicional accesible en `/`:
-
-- Login de empleados con sesión Django
-- Dashboard con resumen de encomiendas
-- CRUD de encomiendas con formularios
-- Historial de cambios por encomienda
-- Perfil del empleado
-
----
-
-## Sesiones del proyecto
+## Sesiones
 
 | Sesión | Tema |
 |--------|------|
 | 03 | Modelos Django ORM, QuerySets, validadores |
 | 04 | Autenticación, sesiones, vistas protegidas |
-| 05 | Django REST Framework — serializers, vistas genéricas, JWT |
-| 06 | DRF avanzado — ViewSets, permisos, throttling, caché, tests |
+| 05 | Django REST Framework — serializers, JWT, Swagger |
+| 06 | DRF avanzado — ViewSets, permisos, throttling, caché Redis, tests |
+| 07 | Asincronía — WebSockets, Django Channels, Daphne, sistemas reactivos |
